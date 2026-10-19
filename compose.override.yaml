@@ -1,0 +1,12 @@
+# Local override (auto-loaded by `docker compose`): hardware OpenGL for RViz.
+# The display is driven by the NVIDIA GPU on nouveau, which the container's
+# Mesa cannot accelerate, so DRI_PRIME=1 offloads rendering to the Intel iGPU.
+services:
+  ocs2:
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "44"   # video
+      - "110"  # render
+    environment:
+      DRI_PRIME: "1"
