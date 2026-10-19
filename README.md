@@ -72,7 +72,7 @@ or build from source.
 Clone the workspace for its Compose configuration and pull the image:
 
 ```bash
-git clone https://github.com/GTLIDAR/aclm_workspace.git aclm_workspace
+git clone https://github.com/wei-hsuan-cheng/aclm_workspace.git aclm_workspace
 cd aclm_workspace
 docker pull pengyuanshu/aclm:noetic-v1
 docker tag pengyuanshu/aclm:noetic-v1 aclm:noetic
@@ -87,7 +87,7 @@ For either Docker or native builds, populate the source dependencies first:
 
 ```bash
 git clone --recurse-submodules \
-  https://github.com/GTLIDAR/aclm_workspace.git aclm_workspace
+  https://github.com/wei-hsuan-cheng/aclm_workspace.git aclm_workspace
 cd aclm_workspace
 ```
 
