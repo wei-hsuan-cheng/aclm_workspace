@@ -285,6 +285,53 @@ supplied through:
 - `geometry_msgs/Twist` messages on `/cmd_vel`.
 - The `/load_waypoint_trajectory` service for named YAML trajectories.
 
+All 2-, 3-, and 4-robot launches use the same topics. Commands target the
+**cargo**; each robot follows at its `initialStateOffset.robot_N` offset from the
+task file, so there is no per-robot command. Commands are ignored until the first
+MPC observation arrives. Run them in a ROS-enabled terminal (with Docker:
+`docker exec -it aclm-demo /usr/local/bin/ocs2-entrypoint bash`).
+
+**Position command.** Publish a `geometry_msgs/PoseStamped` on
+`/move_base_simple/goal`, the same message as the RViz arrow. Only x, y, and
+yaw are used; z, pitch, and roll come from the terrain (perceptive) or the
+current state. The pose is transformed into `odom`, so `frame_id` must be
+`odom` or a frame with a TF to it. For yaw θ, set
+`orientation.z = sin(θ/2)` and `orientation.w = cos(θ/2)`.
+
+```bash
+# Cargo to (1.5, 0.5) in odom, yaw 90 deg
+rostopic pub -1 /move_base_simple/goal geometry_msgs/PoseStamped \
+  '{header: {frame_id: odom}, pose: {position: {x: 1.5, y: 0.5, z: 0.0},
+    orientation: {x: 0.0, y: 0.0, z: 0.7071, w: 0.7071}}}'
+```
+
+The reaching time is the larger of distance / `targetDisplacementVelocity` and
+|Δyaw| / `targetRotationVelocity` (0.3 m/s and 0.15 or 0.3 rad/s in the task
+files).
+
+**Velocity command.** Publish a `geometry_msgs/Twist` on `/cmd_vel`.
+`linear.x` and `linear.y` are in the **`odom` (world) frame**, not the cargo
+frame; `angular.z` is the yaw rate; `linear.z` and the other angular terms are
+ignored. Each command sets the target to the current cargo pose plus velocity ×
+`mpc.timeHorizon` (1.0 s).
+
+```bash
+# Move +x at 0.2 m/s while turning at 0.1 rad/s
+rostopic pub -1 /cmd_vel geometry_msgs/Twist \
+  '{linear: {x: 0.2, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.1}}'
+
+# Stop
+rostopic pub -1 /cmd_vel geometry_msgs/Twist '{}'
+```
+
+The last velocity stays active (re-applied at 10 Hz) until another `/cmd_vel`
+or a goal is received, so a single message keeps the team moving; send a zero
+twist to stop. A goal overrides the velocity command, and a later `/cmd_vel`
+overrides the goal.
+
+**Waypoints.** The `/load_waypoint_trajectory` service loads a named trajectory
+and switches to waypoint mode:
+
 ```bash
 rosservice call /load_waypoint_trajectory \
   "yaml_file: '$(rospack find ocs2_multi_robot)/config/yaml/waypoints.yaml'
@@ -295,8 +342,16 @@ velocity: 0.3"
 Inspect [waypoints.yaml](src/ocs2_multi_robot/config/yaml/waypoints.yaml) first:
 the trajectory must suit the scene and current cargo position. A valid new
 RViz goal switches back to goal mode; it requires an observation and a TF
-transform to `odom`. `/cmd_vel` is ignored while waypoint mode is active.
-A motion target does not replace gait selection.
+transform to `odom`. `/cmd_vel` is ignored while waypoint mode is active; to
+leave it without a goal, publish `false` on `/waypoint_mode_active`
+(`true` re-enters it with the loaded trajectory):
+
+```bash
+rostopic pub -1 /waypoint_mode_active std_msgs/Bool 'data: false'
+```
+
+A motion target does not replace gait selection: in `stance` the robots stand
+still. Gaits are selected only in the gait-command terminal.
 
 ## Citation
 
