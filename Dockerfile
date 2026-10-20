@@ -1,4 +1,4 @@
-ARG ROS_BASE_IMAGE=osrf/ros:noetic-desktop-full
+ARG ROS_BASE_IMAGE=ros:noetic-ros-base
 FROM ${ROS_BASE_IMAGE}
 
 ARG DEBIAN_FRONTEND=noninteractive
@@ -23,6 +23,7 @@ RUN apt-get update \
         libyaml-cpp-dev \
         mesa-utils \
         python3-catkin-tools \
+        ros-noetic-desktop-full \
         ros-noetic-octomap-msgs \
         ros-noetic-pinocchio \
         xauth \
@@ -41,11 +42,14 @@ RUN chown "${USER_UID}:${USER_GID}" /workspace \
 
 USER ${USERNAME}
 
+# hpipm defaults to TARGET=AVX (-m64 -mavx), which fails on arm64.
 RUN source /opt/ros/noetic/setup.bash \
+    && ARCH_CMAKE_ARGS=() \
+    && if [ "$(uname -m)" != "x86_64" ]; then ARCH_CMAKE_ARGS+=(-DTARGET=GENERIC); fi \
     && catkin init \
     && catkin config \
         --extend /opt/ros/noetic \
-        --cmake-args -DCMAKE_BUILD_TYPE=Release \
+        --cmake-args -DCMAKE_BUILD_TYPE=Release "${ARCH_CMAKE_ARGS[@]}" \
     && catkin build ocs2_multi_robot \
         --jobs "${CATKIN_JOBS}" \
         --parallel-packages 1 \

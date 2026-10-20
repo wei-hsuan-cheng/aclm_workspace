@@ -1,0 +1,13 @@
+# Parallels (Apple Silicon) override: hardware OpenGL for RViz via virgl.
+# Use instead of compose.override.yaml:
+#   docker compose -f compose.yaml -f compose.parallels.yaml run ...
+# RENDER_GID must match the host's render group: getent group render
+services:
+  ocs2:
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "44"   # video
+      - "${RENDER_GID:-992}"  # render
+    environment:
+      LIBGL_ALWAYS_SOFTWARE: "0"

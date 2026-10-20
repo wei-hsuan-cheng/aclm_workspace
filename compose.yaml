@@ -4,7 +4,7 @@ services:
     build:
       context: .
       args:
-        ROS_BASE_IMAGE: "${ROS_BASE_IMAGE:-docker.m.daocloud.io/osrf/ros:noetic-desktop-full}"
+        ROS_BASE_IMAGE: "${ROS_BASE_IMAGE:-docker.m.daocloud.io/library/ros:noetic-ros-base}"
         CATKIN_JOBS: "2"
         USER_UID: "${HOST_UID:-1000}"
         USER_GID: "${HOST_GID:-1000}"
@@ -13,6 +13,7 @@ services:
     environment:
       DISPLAY: "${DISPLAY}"
       QT_X11_NO_MITSHM: "1"
+      DISABLE_ROS1_EOL_WARNINGS: "1"
       LIBGL_ALWAYS_SOFTWARE: "${LIBGL_ALWAYS_SOFTWARE:-0}"
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw

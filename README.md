@@ -105,7 +105,9 @@ docker compose build ocs2
 
 This builds `aclm:noetic`. Sources are copied, not mounted; rebuild after edits.
 Compose uses a mirrored base image; set
-`ROS_BASE_IMAGE=osrf/ros:noetic-desktop-full` to use the official image.
+`ROS_BASE_IMAGE=ros:noetic-ros-base` to use the official image (multi-arch:
+amd64 and arm64, e.g. Apple Silicon / Parallels). `ros-noetic-desktop-full` is
+installed on top via apt.
 
 **Native:** use ROS Noetic, `catkin_tools`, CMake >= 3.14, C++17, and Eigen
 **3.3.7 exactly**. Install system dependencies listed in
@@ -158,6 +160,15 @@ docker compose run --rm --pull never --name aclm-demo ocs2 \
 `ocs2_multi_robot` is the ROS package. The entrypoint loads ROS and the compiled
 workspace; `roslaunch` starts a master if needed. Replace the launch filename
 to select another scenario.
+
+On a Parallels arm64 VM (Apple Silicon), use the virgl GPU override instead of
+`compose.override.yaml` so RViz renders on the GPU:
+
+```bash
+DISPLAY=:1 RENDER_GID="$(getent group render | cut -d: -f3)" \
+  docker compose -f compose.yaml -f compose.parallels.yaml run --rm --pull never \
+  --name aclm-demo ocs2 roslaunch ocs2_multi_robot two_quadruped_perceptive_admm.launch
+```
 
 To start an interactive container instead:
 
